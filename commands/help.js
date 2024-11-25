@@ -25,6 +25,12 @@ module.exports = {
         // Allgemeine Befehle hinzufügen
         embed.addFields(
             {
+                name: '📋 **Allgemeine Befehle**',
+                value:
+                    '🎖️ **/level** - Zeigt dein Level und deine Punkte an.\n' +
+                    '🏆 **/leaderboard** - Zeigt die Bestenliste der Benutzer.',
+            },
+            {
                 name: '🎵 **Musik Befehle**',
                 value:
                     '🎶 **/play <Titel/URL>** - Spielt einen Song ab.\n' +

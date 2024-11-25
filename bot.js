@@ -6,6 +6,9 @@ require('dotenv').config();
 const db = require('./db'); // Importiere die ausgelagerte Datenbankverbindung
 const logModule = require('./log'); // Importiere das Logging-Modul
 
+// Debug-Modus prüfen
+const isDebug = process.argv.includes('--debug');
+
 // Bot-Client initialisieren
 const client = new Client({
     intents: [
@@ -16,7 +19,8 @@ const client = new Client({
         GatewayIntentBits.GuildMessageReactions,
     ],
 });
-console.log('🤖 [INFO] Bot-Client initialisiert mit den richtigen Intents.');
+
+console.log(`🤖 [INFO] Bot-Client initialisiert mit den richtigen Intents. Debug-Modus: ${isDebug ? 'Aktiviert' : 'Deaktiviert'}`);
 
 // Überprüfe Umgebungsvariablen
 if (!process.env.DISCORD_TOKEN || !process.env.DISCORD_APPLICATION_ID) {
@@ -42,8 +46,7 @@ for (const file of commandFiles) {
             console.warn(`⚠️ [WARN] Befehl ${file} ist nicht korrekt definiert.`);
             continue;
         }
-        
-        // Hier wird sichergestellt, dass der Befehl die toJSON-Methode für das Synchronisieren der Slash-Befehle hat.
+
         if (command.data instanceof SlashCommandBuilder) {
             client.commands.set(command.data.name, command);
             console.log(`✔️ [DEBUG] Befehl erfolgreich geladen: ${command.data.name}`);
@@ -65,9 +68,9 @@ for (const file of eventFiles) {
         const event = require(`./events/${file}`);
         if (event.name && event.execute) {
             if (event.once) {
-                client.once(event.name, (...args) => event.execute(...args, db)); // Übergibt `db`
+                client.once(event.name, (...args) => event.execute(...args, db));
             } else {
-                client.on(event.name, (...args) => event.execute(...args, db)); // Übergibt `db`
+                client.on(event.name, (...args) => event.execute(...args, db));
             }
             console.log(`✔️ [DEBUG] Event erfolgreich registriert: ${event.name}`);
         } else {
@@ -78,19 +81,37 @@ for (const file of eventFiles) {
     }
 }
 
+// Utils-Module laden
+console.log('📂 [INFO] Lade Utils...');
+const utilsPath = path.join(__dirname, 'utils');
+if (!fs.existsSync(utilsPath)) {
+    console.error('❌ [ERROR] Der Ordner ./utils wurde nicht gefunden.');
+    process.exit(1);
+}
+
+const utilsFiles = fs.readdirSync(utilsPath).filter(file => file.endsWith('.js'));
+client.utils = {};
+
+for (const file of utilsFiles) {
+    try {
+        const utilName = path.parse(file).name;
+        client.utils[utilName] = require(`./utils/${file}`);
+        console.log(`✔️ [DEBUG] Utils-Modul erfolgreich geladen: ${utilName}`);
+    } catch (error) {
+        console.error(`❌ [ERROR] Fehler beim Laden des Utils-Moduls ${file}:`, error.message || error);
+    }
+}
+
 // Event: Bot bereit
 client.once('ready', async () => {
     console.log(`🎉 [INFO] Bot erfolgreich eingeloggt als ${client.user.tag}`);
-
-    // Server anzeigen, denen der Bot beigetreten ist
     console.log(`🌐 [INFO] Der Bot ist auf ${client.guilds.cache.size} Servern aktiv.`);
+
     client.guilds.cache.forEach(guild => {
         console.log(`   - ${guild.name} (ID: ${guild.id})`);
     });
 
     console.log('🔄 [INFO] Synchronisiere Slash-Befehle...');
-
-    // Wir rufen jetzt `toJSON()` für alle geladenen Befehle auf, um die Daten korrekt zu formatieren
     const commands = client.commands.map(command => command.data.toJSON());
     const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
@@ -105,10 +126,10 @@ client.once('ready', async () => {
     }
 
     // Bestehende Reaktionen verarbeiten
-    const { execute: processExistingReactions } = require('./events/processExistingReactions');
-    await processExistingReactions(client, db);
+    if (client.utils.processExistingReactions) {
+        await client.utils.processExistingReactions(client, db);
+    }
 });
-
 
 // Slash-Command-Handler
 client.on('interactionCreate', async interaction => {
@@ -125,7 +146,7 @@ client.on('interactionCreate', async interaction => {
 
     try {
         console.log(`🚀 [INFO] Führe Befehl aus: ${interaction.commandName}`);
-        await command.execute(interaction, db); // Übergibt die `db`-Instanz
+        await command.execute(interaction, db);
     } catch (error) {
         console.error(`❌ [ERROR] Fehler beim Ausführen des Befehls ${interaction.commandName}:`, error.message || error);
         await interaction.reply({
