@@ -12,8 +12,8 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle('📜 Hilfe & Befehle')
             .setDescription(
-                'Hier findest du alle verfügbaren Befehle für den Bot.\n\n' +
-                '📢 **Hinweis:** Für Fragen oder Probleme wende dich bitte an **@Admin** oder **@Management**.'
+                'Willkommen zur Hilfe-Seite! Hier findest du alle verfügbaren Befehle, die du verwenden kannst.\n\n' +
+                '📢 **Hinweis:** Bei Fragen oder Problemen wende dich bitte an **@Admin** oder **@Management**.'
             )
             .setColor('Purple')
             .setTimestamp()
@@ -28,18 +28,25 @@ module.exports = {
                 name: '📋 **Allgemeine Befehle**',
                 value:
                     '🎖️ **/level** - Zeigt dein Level und deine Punkte an.\n' +
-                    '🏆 **/leaderboard** - Zeigt die Bestenliste der Benutzer.',
+                    '📝 **/feedback** - Sende Feedback oder Ideen an das Management-Team.\n' +
+                    '🏆 **/leaderboard** - Zeigt die Bestenliste der Benutzer.\n\n' +
+                    '🔧 **/hilfe** - Zeigt diese Hilfe-Seite an.',
             },
             {
                 name: '🎵 **Musik Befehle**',
                 value:
                     '🎶 **/play <Titel/URL>** - Spielt einen Song ab.\n' +
-                    '⏸️ **/pause** - Pausiert die Wiedergabe.\n' +
-                    '⏭️ **/skip** - Überspringt den aktuellen Song.',
-            }
+                    '⏸️ **/pause** - Pausiert die Musik.\n' +
+                    '⏭️ **/skip** - Überspringt den aktuellen Song.\n\n' +
+                    '🔊 **/volume <Wert>** - Stellt die Lautstärke ein.\n' +
+                    '🔁 **/loop** - Schaltet die Schleifen-Wiedergabe ein/aus.',
+            },
         );
 
+        // Debugging Ausgabe
         console.log(`📤 [DEBUG] Sending help embed to ${interaction.user.tag}`);
+        
+        // Sende das Embed mit den Befehlen
         await interaction.reply({ embeds: [embed], ephemeral: true });
     },
 };
