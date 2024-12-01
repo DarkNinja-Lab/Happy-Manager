@@ -12,6 +12,14 @@ module.exports = {
     ),
 
   async execute(interaction, db) {
+    // Überprüfen, ob der Benutzer Admin-Berechtigungen hat
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+      return interaction.reply({
+        content: '❌ Du benötigst Administratorrechte, um diesen Befehl zu verwenden.',
+        ephemeral: true,
+      });
+    }
+
     const channel = interaction.options.getChannel('channel');
 
     // Kein Kanal angegeben -> Aktuellen Log-Kanal anzeigen
