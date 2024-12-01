@@ -18,30 +18,29 @@ module.exports = {
             let points = userRow?.points || 0;
             let level = userRow?.level || 1;
 
+            // Prüfen, ob es der erste Punkt des Benutzers ist
+            const isFirstPoint = points === 0;
+
             // Punkte hinzufügen (z. B. 10 Punkte pro Nachricht)
             points += 10;
 
             // Hole die Punkte für den nächsten Levelaufstieg
             const [settingsRow] = await db.query(
-                'SELECT points_to_next_level FROM level_settings WHERE guild_id = ?',
+                'SELECT points_to_next_level, level_channel_id FROM level_settings WHERE guild_id = ?',
                 [guildId]
             );
 
             const pointsToNextLevel = settingsRow?.points_to_next_level || 100;
+            const levelChannelId = settingsRow?.level_channel_id;
 
             // Prüfen, ob ein neues Level erreicht wurde
             if (points >= pointsToNextLevel) {
                 level++;
                 points = 0; // Punkte zurücksetzen
 
-                // Benachrichtigung im Level-Kanal
-                const [channelRow] = await db.query(
-                    'SELECT level_channel_id FROM level_settings WHERE guild_id = ?',
-                    [guildId]
-                );
-
-                if (channelRow?.level_channel_id) {
-                    const channel = message.guild.channels.cache.get(channelRow.level_channel_id);
+                // Benachrichtigung im Level-Kanal für Levelaufstieg
+                if (levelChannelId) {
+                    const channel = message.guild.channels.cache.get(levelChannelId);
                     if (channel) {
                         channel.send(`🎉 ${message.author} hat Level ${level} erreicht! Glückwunsch!`);
                     }
@@ -68,6 +67,14 @@ module.exports = {
                 'INSERT INTO levels (user_id, guild_id, points, level) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE points = ?, level = ?',
                 [userId, guildId, points, level, points, level]
             );
+
+            // Nachricht bei den ersten Punkten des Benutzers
+            if (isFirstPoint && levelChannelId) {
+                const channel = message.guild.channels.cache.get(levelChannelId);
+                if (channel) {
+                    channel.send(`🎉 ${message.author} hat gerade seine ersten Punkte gesammelt! Willkommen im Level-System! 🚀`);
+                }
+            }
 
         } catch (error) {
             console.error('❌ Fehler beim Verarbeiten der Level-Logik:', error);
