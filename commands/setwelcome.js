@@ -2,7 +2,7 @@ const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('setwelcome')
+        .setName('setwelcomechannel')
         .setDescription('Setzt den Kanal für Willkommensnachrichten.')
         .addChannelOption(option =>
             option

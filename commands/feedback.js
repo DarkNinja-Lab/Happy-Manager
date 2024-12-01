@@ -3,7 +3,7 @@ const db = require('../db');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('feedback')
+        .setName('sendfeedback')
         .setDescription('📩 Sende Feedback oder eine Idee an die Admins.')
         .addStringOption(option =>
             option.setName('nachricht')

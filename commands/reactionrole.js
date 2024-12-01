@@ -3,7 +3,7 @@ const db = require('../db');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('reactionrole')
+        .setName('createreactionrole')
         .setDescription('Fügt eine Reaction Role zu einer Nachricht hinzu.')
         .addStringOption(option =>
             option.setName('channel')
@@ -23,6 +23,14 @@ module.exports = {
                 .setRequired(true)),
 
     async execute(interaction) {
+        // Admin-Berechtigungsprüfung
+        if (!interaction.member.permissions.has('Administrator')) {
+            return interaction.reply({
+                content: '❌ Du hast keine Berechtigung, diesen Befehl auszuführen.',
+                ephemeral: true,
+            });
+        }
+
         const channelId = interaction.options.getString('channel');
         const messageId = interaction.options.getString('messageid');
         let emoji = interaction.options.getString('emoji');
@@ -39,12 +47,18 @@ module.exports = {
         if (!message) return interaction.reply({ content: '❌ Nachricht nicht gefunden.', ephemeral: true });
 
         // Nachricht mit Emoji reagieren lassen
-        await message.react(emoji).catch(() => null);
+        try {
+            await message.react(emoji);
+        } catch (err) {
+            console.error(`[ERROR] Fehler beim Hinzufügen der Reaktion: ${err}`);
+            return interaction.reply({ content: '❌ Fehler beim Hinzufügen der Reaktion.', ephemeral: true });
+        }
 
         // Reaction Role in der Datenbank speichern
         const sql = `
             INSERT INTO reaction_roles (guild_id, message_id, emoji, role_id, channel_id)
             VALUES (?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE role_id = VALUES(role_id)
         `;
         await db.query(sql, [
             interaction.guild.id,

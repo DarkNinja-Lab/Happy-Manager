@@ -4,53 +4,57 @@ const db = require('../db');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('leaderboard')
-        .setDescription('Zeigt das Top-Level- und Punkt-Leaderboard des Servers an.'),
+        .setDescription('Zeigt die Rangliste der Top-Level-Spieler auf diesem Server.'),
     async execute(interaction) {
         const guildId = interaction.guild.id;
 
         try {
-            // Datenbankabfrage
-            const [rows] = await db.query(
-                'SELECT user_id, points, level FROM levels WHERE guild_id = ? ORDER BY points DESC LIMIT 10',
+            // Hole die Top-10-Spieler aus der Datenbank basierend auf Level und Punkten
+            const leaderboard = await db.query(
+                `SELECT user_id, level, points
+                 FROM levels
+                 WHERE guild_id = ?
+                 ORDER BY level DESC, points DESC
+                 LIMIT 10`,
                 [guildId]
             );
 
-            // Debugging-Ausgabe der Struktur von 'rows'
-            console.log('[DEBUG] Abfrageergebnis:', rows);
-
-            // Stelle sicher, dass rows als Array verarbeitet wird
-            const leaderboardData = Array.isArray(rows) ? rows : [rows];
-
-            // Überprüfen, ob Daten vorhanden sind
-            if (leaderboardData.length === 0 || !leaderboardData[0].user_id) {
+            if (leaderboard.length === 0) {
                 return interaction.reply({
-                    content: '❌ Es gibt noch keine Benutzer, die Punkte gesammelt haben.',
+                    content: '❌ Es gibt noch keine Spieler in der Rangliste. Sei der Erste und sammel Punkte! 🚀',
+                    ephemeral: true,
                 });
             }
 
-            // Erstelle ein Embed für das Leaderboard
+            // Erstelle das Leaderboard-Embed
             const leaderboardEmbed = new EmbedBuilder()
-                .setColor('#FFD700') // Goldene Farbe
-                .setTitle(`🏆 Leaderboard für ${interaction.guild.name}`)
-                .setDescription('**Die Top 10 Spieler im Server**')
+                .setColor('#00FF00') // Grüne Farbe für bessere Lesbarkeit
+                .setTitle('🏆 **Top 10 Rangliste**')
+                .setDescription('Die besten Spieler auf diesem Server:')
+                .setFooter({ text: 'Sammle Punkte, um in der Rangliste aufzusteigen! 🚀' })
                 .setTimestamp();
 
-            // Daten hinzufügen
-            leaderboardData.forEach((row, index) => {
-                const user = interaction.guild.members.cache.get(row.user_id) || { user: { username: 'Unbekannt' } };
-                const rank = index + 1;
-                leaderboardEmbed.addFields({
-                    name: `#${rank} ${user.user.username}`,
-                    value: `Level: ${row.level} | Punkte: ${row.points}`,
-                    inline: false,
-                });
+            // Emojis für die Top 3 Plätze
+            const rankEmojis = ['🥇', '🥈', '🥉'];
+
+            // Spieler zur Rangliste hinzufügen
+            let leaderboardContent = '';
+            leaderboard.forEach((entry, index) => {
+                const user = interaction.client.users.cache.get(entry.user_id) || { username: 'Unbekannt' };
+                const rankEmoji = rankEmojis[index] || `#${index + 1}`;
+                leaderboardContent += `${rankEmoji} **${user.username}**\n` +
+                    `   - Level: **${entry.level}** | Punkte: **${entry.points}**\n\n`;
             });
 
+            leaderboardEmbed.setDescription(leaderboardContent.trim());
+
+            // Sende die Rangliste
             return interaction.reply({ embeds: [leaderboardEmbed] });
         } catch (error) {
-            console.error('❌ Fehler beim Abrufen des Leaderboards:', error);
-            interaction.reply({
-                content: '❌ Es gab einen Fehler beim Abrufen des Leaderboards. Bitte versuche es später erneut.',
+            console.error('❌ Fehler beim Abrufen der Rangliste:', error);
+            return interaction.reply({
+                content: '❌ Es gab einen Fehler beim Abrufen der Rangliste. Bitte versuche es später erneut.',
+                ephemeral: true,
             });
         }
     },

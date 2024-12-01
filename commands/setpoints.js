@@ -3,7 +3,7 @@ const db = require('../db');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('setpoints')
+        .setName('pointtolevel')
         .setDescription('Setzt die Punkte für den nächsten Level-Aufstieg.')
         .addIntegerOption(option =>
             option.setName('points').setDescription('Die Anzahl an Punkten für das nächste Level').setRequired(true)

@@ -3,7 +3,7 @@ const db = require('../db');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('setlevelrole')
+        .setName('setlevelgoalrole')
         .setDescription('Setzt die Rolle, die bei einem bestimmten Level vergeben wird.')
         .addRoleOption(option =>
             option

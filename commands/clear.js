@@ -4,7 +4,7 @@ const db = require('../db');  // Importiere die DB-Verbindung
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('clear')
+        .setName('clearmessages')
         .setDescription('Löscht eine bestimmte Anzahl an Nachrichten.')
         .addIntegerOption(option =>
             option.setName('anzahl')

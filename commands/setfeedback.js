@@ -3,7 +3,7 @@ const db = require('../db');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('setfeedback')
+        .setName('setfeedbackoutput')
         .setDescription('📩 Setzt den Kanal für Feedback-Nachrichten (nur für Admins).')
         .addChannelOption(option => 
             option.setName('kanal')
